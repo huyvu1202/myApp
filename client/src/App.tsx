@@ -89,6 +89,18 @@ const App = () => {
     }
   };
 
+  // New logout handler
+  const handleLogout = () => {
+    Cookies.remove("token");
+    setFlashcards([]);
+    setCurrentIndex(0);
+    setSelectedLevel(null);
+    setUsername("");
+    setPassword("");
+    setScreen("login");
+    message.success("Logged out and cleared data");
+  };
+
   const renderLogin = () => (
     <Card title="Login" style={containerStyle}>
       <Input
@@ -126,6 +138,13 @@ const App = () => {
           Flashcard {level}
         </Card.Grid>
       ))}
+      <Button
+        danger
+        style={{ marginTop: 20, width: "100%" }}
+        onClick={handleLogout}
+      >
+        Logout & Clear Data
+      </Button>
     </Card>
   );
 
