@@ -23,7 +23,13 @@ const gridStyle: React.CSSProperties = {
   textAlign: "center",
   padding: 20,
   fontSize: 18,
+  cursor: "pointer",
+  backgroundColor: "#fafafa",
+  border: "1px solid #f0f0f0",
+  marginBottom: 10,
 };
+
+type JLPTLevel = "N1" | "N2" | "N3" | "N4" | "N5";
 
 const App = () => {
   const [screen, setScreen] = useState<"login" | "menu" | "question" | "flashcard">("login");
@@ -33,6 +39,7 @@ const App = () => {
   const [flashcards, setFlashcards] = useState<VocabFlashcard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadingFlashcards, setLoadingFlashcards] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<JLPTLevel | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -60,22 +67,23 @@ const App = () => {
     }
   };
 
-  const fetchFlashcards = async () => {
+  const fetchFlashcards = async (level: JLPTLevel) => {
     setLoadingFlashcards(true);
     try {
       const token = Cookies.get("token");
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/flashcardN5`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/flashcard${level}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setFlashcards(res.data);
+      setSelectedLevel(level);
       setCurrentIndex(0);
       setScreen("flashcard");
-      message.success(`Loaded ${res.data.length} flashcards`);
+      message.success(`Loaded ${res.data.length} flashcards for ${level}`);
     } catch (error) {
       console.error("Error fetching flashcards:", error);
-      message.error("Failed to load flashcards");
+      message.error(`Failed to load flashcards for ${level}`);
     } finally {
       setLoadingFlashcards(false);
     }
@@ -102,13 +110,22 @@ const App = () => {
   );
 
   const renderMenu = () => (
-    <Card title="Menu" style={containerStyle}>
-      <Card.Grid style={gridStyle} onClick={() => setScreen("question")}>
+    <Card title="Choose Flashcard Level" style={containerStyle}>
+      <Card.Grid
+        style={gridStyle}
+        onClick={() => setScreen("question")}
+      >
         Question
       </Card.Grid>
-      <Card.Grid style={gridStyle} onClick={fetchFlashcards}>
-        Flashcard
-      </Card.Grid>
+      {(["N1", "N2", "N3", "N4", "N5"] as JLPTLevel[]).map((level) => (
+        <Card.Grid
+          key={level}
+          style={gridStyle}
+          onClick={() => fetchFlashcards(level)}
+        >
+          Flashcard {level}
+        </Card.Grid>
+      ))}
     </Card>
   );
 
@@ -120,6 +137,7 @@ const App = () => {
       </Button>
     </Card>
   );
+
   const renderFlashcard = () => {
     if (loadingFlashcards) {
       return (
@@ -128,7 +146,7 @@ const App = () => {
         </div>
       );
     }
-  
+
     if (!flashcards.length) {
       return (
         <div style={containerStyle}>
@@ -137,9 +155,9 @@ const App = () => {
         </div>
       );
     }
-  
+
     const card = flashcards[currentIndex];
-  
+
     const onNext = () => {
       if (currentIndex + 1 < flashcards.length) {
         setCurrentIndex(currentIndex + 1);
@@ -148,14 +166,6 @@ const App = () => {
       }
     };
 
-    const onBack = () => {
-      if (currentIndex - 1 > 0) {
-        setCurrentIndex(currentIndex - 1);
-      } else {
-        message.info("You reached the last card");
-      }
-    };
-  
     const onPrev = () => {
       if (currentIndex > 0) {
         setCurrentIndex(currentIndex - 1);
@@ -163,19 +173,11 @@ const App = () => {
         message.info("This is the first card");
       }
     };
-  
+
     return (
-      <div
-        style={{
-          ...containerStyle,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "400px",
-          justifyContent: "space-between",
-        }}
-      >
-        <FlashCardApp card={card} onNext={onNext} onBack={onBack} />
-  
+      <Card title={`Flashcards - ${selectedLevel}`} style={containerStyle}>
+        <FlashCardApp card={card} onNext={onNext} onBack={onPrev} />
+
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
           <Button onClick={onPrev} disabled={currentIndex === 0}>
             − Previous
@@ -184,14 +186,13 @@ const App = () => {
             + Next
           </Button>
         </div>
-  
+
         <Button style={{ marginTop: 16, width: "100%" }} onClick={() => setScreen("menu")}>
           Back to Menu
         </Button>
-      </div>
+      </Card>
     );
   };
-  
 
   switch (screen) {
     case "login":
