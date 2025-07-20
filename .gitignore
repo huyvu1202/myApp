@@ -9,9 +9,6 @@ client/.vite
 server/dist
 server/build
 
-# Env files
-**/.env
-
 # Logs
 *.log
 npm-debug.log*
