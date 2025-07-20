@@ -1,0 +1,19 @@
+# dependencies
+/node_modules
+
+# compiled output (if using tsc)
+dist/
+build/
+
+# local env
+.env
+
+# logs
+*.log
+npm-debug.log*
+
+# IDE/editor
+.vscode
+.idea
+.DS_Store
+Thumbs.db

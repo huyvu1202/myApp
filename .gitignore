@@ -1,0 +1,23 @@
+# Node modules
+**/node_modules
+
+# Vite build (client)
+client/dist
+client/.vite
+
+# Express build (server)
+server/dist
+server/build
+
+# Env files
+**/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE/editor
+.vscode
+.idea
+.DS_Store
+Thumbs.db
