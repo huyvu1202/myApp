@@ -10,7 +10,7 @@ const containerStyle: React.CSSProperties = {
   flexDirection: "column",
   justifyContent: "center",
   alignItems: "center",
-  minWidth: "800px",
+  width: "100vw",
   height: "100vh",
   padding: 20,
   boxSizing: "border-box",
