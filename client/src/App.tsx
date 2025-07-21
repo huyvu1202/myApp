@@ -6,16 +6,22 @@ import Cookies from "js-cookie";
 import FlashCardApp from "./components/Flashcard";
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: "90vw",
-  width: 400,
-  margin: "10vh auto",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  minWidth: "800px",
+  height: "100vh",
   padding: 20,
   boxSizing: "border-box",
+  overflow: "auto",
+  backgroundColor: "#f9f9f9",
 };
+
 
 const buttonStyle: React.CSSProperties = {
   width: "100%",
-  marginTop: 10,
+  marginTop: 5,
 };
 
 const gridStyle: React.CSSProperties = {
@@ -202,7 +208,7 @@ const App = () => {
       <Card title={`Flashcards - ${selectedLevel}`} style={containerStyle}>
         <FlashCardApp card={card} onNext={onNext} onBack={onPrev} />
 
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 0 }}>
           <Button onClick={onPrev} disabled={currentIndex === 0}>
             − Previous
           </Button>
@@ -211,7 +217,7 @@ const App = () => {
           </Button>
         </div>
 
-        <Button style={{ marginTop: 16, width: "100%" }} onClick={() => setScreen("menu")}>
+        <Button style={{ marginTop: 5, width: "100%" }} onClick={() => setScreen("menu")}>
           Back to Menu
         </Button>
       </Card>

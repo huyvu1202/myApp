@@ -50,10 +50,10 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
       <Card
         title={{ vocabulary: "Vocabulary", kanji: "Kanji", sentence: "Sentence" }[card.type]}
         style={{
-          margin: 16,
+          margin: 0,
           fontSize: "14px",
           lineHeight: 1.6,
-          width: "100%",
+          width: 300, // Fixed width
           maxWidth: 480,
           height: 400, // Fixed height
           display: "flex",
