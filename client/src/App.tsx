@@ -35,9 +35,10 @@ const App = () => {
   const [screen, setScreen] = useState<"login" | "menu" | "question" | "flashcard">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const [flashcards, setFlashcards] = useState<VocabFlashcard[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState<number>(
+    parseInt(localStorage.getItem("currentIndex") || "0", 10) // Retrieve saved index from localStorage
+  );
   const [loadingFlashcards, setLoadingFlashcards] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<JLPTLevel | null>(null);
 
@@ -67,6 +68,11 @@ const App = () => {
     }
   };
 
+  const saveCurrentIndex = (index: number) => {
+    setCurrentIndex(index);
+    localStorage.setItem("currentIndex", index.toString()); // Save index to localStorage
+  };
+
   const fetchFlashcards = async (level: JLPTLevel) => {
     setLoadingFlashcards(true);
     try {
@@ -78,7 +84,7 @@ const App = () => {
       });
       setFlashcards(res.data);
       setSelectedLevel(level);
-      setCurrentIndex(0);
+      saveCurrentIndex(0); // Reset index when loading new flashcards
       setScreen("flashcard");
       message.success(`Loaded ${res.data.length} flashcards for ${level}`);
     } catch (error) {
@@ -89,11 +95,10 @@ const App = () => {
     }
   };
 
-  // New logout handler
   const handleLogout = () => {
     Cookies.remove("token");
     setFlashcards([]);
-    setCurrentIndex(0);
+    saveCurrentIndex(0);
     setSelectedLevel(null);
     setUsername("");
     setPassword("");
@@ -179,7 +184,7 @@ const App = () => {
 
     const onNext = () => {
       if (currentIndex + 1 < flashcards.length) {
-        setCurrentIndex(currentIndex + 1);
+        saveCurrentIndex(currentIndex + 1); // Save updated index
       } else {
         message.info("You reached the last card");
       }
@@ -187,7 +192,7 @@ const App = () => {
 
     const onPrev = () => {
       if (currentIndex > 0) {
-        setCurrentIndex(currentIndex - 1);
+        saveCurrentIndex(currentIndex - 1); // Save updated index
       } else {
         message.info("This is the first card");
       }
