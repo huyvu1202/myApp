@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Typography, Tag } from "antd";
 import { useSwipeable } from "react-swipeable";
+import Kuroshiro from "kuroshiro";
+import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -11,22 +13,40 @@ interface FlashcardProps {
   onBack: () => void;
 }
 
+const convertToHiragana = async (text: string) => {
+  const kuroshiro = new Kuroshiro();
+  await kuroshiro.init(new KuromojiAnalyzer());
+  const result = await kuroshiro.convert(text, { to: "hiragana" });
+  return result;
+};
+
 const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
   const [showDetail, setShowDetail] = useState(false);
+  const [convertedReading, setConvertedReading] = useState<string>("");
+
+  useEffect(() => {
+    const fetchConvertedReading = async () => {
+      if (card.type === "vocabulary" && !card.reading) {
+        const result = await convertToHiragana(card.word);
+        setConvertedReading(result);
+      }
+    };
+
+    fetchConvertedReading();
+  }, [card.type === "vocabulary" ? card.reading : null, card.type === "vocabulary" ? card.word : null]);
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      console.log("Swiped right - moving to next card");
+      console.log("Swiped left - moving to next card");
       onNext();
     },
     onSwipedRight: () => {
-        console.log("Swiped right - moving to next card");
-        onBack();
-      },
+      console.log("Swiped right - moving to previous card");
+      onBack();
+    },
     preventScrollOnSwipe: true,
     trackMouse: true,
   });
-  
 
   const handleTap = () => {
     setShowDetail(!showDetail);
@@ -80,16 +100,12 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
           <div style={{ fontSize: "14px" }}>
             {card.type === "vocabulary" && (
               <>
-                <Title level={4}>
-                  {card.word} 
-                </Title>
+                <Title level={4}>{card.word}</Title>
                 <Text>
-                {card.reading}
-                <br />
+                  {card.reading || convertedReading} {/* Use converted reading if card.reading is empty */}
+                  <br />
                 </Text>
-                <Text>
-               {card.meaning}
-                </Text>
+                <Text>{card.meaning}</Text>
                 {card.exampleSentence && (
                   <Paragraph style={{ marginTop: 8 }}>
                     <b>Example:</b>
@@ -102,9 +118,7 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
                         <br />
                       </>
                     )}
-                    {card.exampleSentence.vi && (
-                      <>{card.exampleSentence.vi}</>
-                    )}
+                    {card.exampleSentence.vi && <>{card.exampleSentence.vi}</>}
                   </Paragraph>
                 )}
               </>
