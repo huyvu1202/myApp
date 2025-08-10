@@ -49,7 +49,7 @@ interface SentenceFlashcard extends FlashcardBase {
 }
 
 // Union type for all flashcards
-type Flashcard = VocabFlashcard;
+type Flashcard = VocabFlashcard | KanjiFlashcard | SentenceFlashcard;
 
 // Optional: for managing study sessions
 interface FlashcardStudyStatus {

@@ -18,7 +18,6 @@ const containerStyle: React.CSSProperties = {
   backgroundColor: "#f9f9f9",
 };
 
-
 const buttonStyle: React.CSSProperties = {
   width: "100%",
   marginTop: 5,
@@ -38,15 +37,15 @@ const gridStyle: React.CSSProperties = {
 type JLPTLevel = "N1" | "N2" | "N3" | "N4" | "N5";
 
 const App = () => {
-  const [screen, setScreen] = useState<"login" | "menu" | "question" | "flashcard">("login");
+  const [screen, setScreen] = useState<
+    "login" | "menu" | "question" | "flashcard"
+  >("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [flashcards, setFlashcards] = useState<VocabFlashcard[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(
-    parseInt(localStorage.getItem("currentIndex") || "0", 10) // Retrieve saved index from localStorage
-  );
-  const [loadingFlashcards, setLoadingFlashcards] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<JLPTLevel | null>(null);
+  const [loadingFlashcards, setLoadingFlashcards] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -55,12 +54,30 @@ const App = () => {
     }
   }, []);
 
+  // Hàm lấy key localStorage cho từng level
+  const getStorageKey = (level: JLPTLevel) => `currentIndex_${level}`;
+
+  // Lưu currentIndex cho level
+  const saveCurrentIndex = (level: JLPTLevel, index: number) => {
+    setCurrentIndex(index);
+    localStorage.setItem(getStorageKey(level), index.toString());
+  };
+
+  // Lấy currentIndex cho level, trả về 0 nếu chưa có
+  const loadCurrentIndex = (level: JLPTLevel): number => {
+    const saved = localStorage.getItem(getStorageKey(level));
+    return saved ? parseInt(saved, 10) : 0;
+  };
+
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/login`, {
-        username,
-        password,
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/login`,
+        {
+          username,
+          password,
+        }
+      );
       if (response.data.success) {
         const token = response.data.token;
         Cookies.set("token", token);
@@ -74,23 +91,25 @@ const App = () => {
     }
   };
 
-  const saveCurrentIndex = (index: number) => {
-    setCurrentIndex(index);
-    localStorage.setItem("currentIndex", index.toString()); // Save index to localStorage
-  };
-
   const fetchFlashcards = async (level: JLPTLevel) => {
     setLoadingFlashcards(true);
     try {
       const token = Cookies.get("token");
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/flashcard${level}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/flashcard${level}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setFlashcards(res.data);
       setSelectedLevel(level);
-      saveCurrentIndex(0); // Reset index when loading new flashcards
+
+      // Lấy index đã lưu cho level hoặc 0 nếu chưa có
+      const savedIndex = loadCurrentIndex(level);
+      setCurrentIndex(savedIndex);
+
       setScreen("flashcard");
       message.success(`Loaded ${res.data.length} flashcards for ${level}`);
     } catch (error) {
@@ -104,7 +123,7 @@ const App = () => {
   const handleLogout = () => {
     Cookies.remove("token");
     setFlashcards([]);
-    saveCurrentIndex(0);
+    setCurrentIndex(0);
     setSelectedLevel(null);
     setUsername("");
     setPassword("");
@@ -134,10 +153,7 @@ const App = () => {
 
   const renderMenu = () => (
     <Card title="Choose Flashcard Level" style={containerStyle}>
-      <Card.Grid
-        style={gridStyle}
-        onClick={() => setScreen("question")}
-      >
+      <Card.Grid style={gridStyle} onClick={() => setScreen("question")}>
         Question
       </Card.Grid>
       {(["N1", "N2", "N3", "N4", "N5"] as JLPTLevel[]).map((level) => (
@@ -189,16 +205,16 @@ const App = () => {
     const card = flashcards[currentIndex];
 
     const onNext = () => {
-      if (currentIndex + 1 < flashcards.length) {
-        saveCurrentIndex(currentIndex + 1); // Save updated index
+      if (currentIndex + 1 < flashcards.length && selectedLevel) {
+        saveCurrentIndex(selectedLevel, currentIndex + 1);
       } else {
         message.info("You reached the last card");
       }
     };
 
     const onPrev = () => {
-      if (currentIndex > 0) {
-        saveCurrentIndex(currentIndex - 1); // Save updated index
+      if (currentIndex > 0 && selectedLevel) {
+        saveCurrentIndex(selectedLevel, currentIndex - 1);
       } else {
         message.info("This is the first card");
       }
@@ -208,16 +224,28 @@ const App = () => {
       <Card title={`Flashcards - ${selectedLevel}`} style={containerStyle}>
         <FlashCardApp card={card} onNext={onNext} onBack={onPrev} />
 
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 0,
+          }}
+        >
           <Button onClick={onPrev} disabled={currentIndex === 0}>
             − Previous
           </Button>
-          <Button onClick={onNext} disabled={currentIndex === flashcards.length - 1}>
+          <Button
+            onClick={onNext}
+            disabled={currentIndex === flashcards.length - 1}
+          >
             + Next
           </Button>
         </div>
 
-        <Button style={{ marginTop: 5, width: "100%" }} onClick={() => setScreen("menu")}>
+        <Button
+          style={{ marginTop: 5, width: "100%" }}
+          onClick={() => setScreen("menu")}
+        >
           Back to Menu
         </Button>
       </Card>
