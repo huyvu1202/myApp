@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Card, Typography, Tag } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Card, Typography, Tag, Button, Space } from "antd";
 import { useSwipeable } from "react-swipeable";
 import { toHiragana } from "wanakana";
+import { Input } from "antd";
+import type { InputRef } from "antd";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -18,9 +20,17 @@ const convertToHiragana = (text: string) => {
 const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
   const [showDetail, setShowDetail] = useState(false);
   const [convertedReading, setConvertedReading] = useState<string>("");
+  const [inputValue, setInputValue] = useState("");
+  const [wrongCount, setWrongCount] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+
+  const inputRef = useRef<InputRef>(null);
 
   useEffect(() => {
-    // setShowDetail(false); // reset when new card comes
+    setShowDetail(false);
+    setWrongCount(0);
+    setShowHint(false);
+    setInputValue("");
     if (card.type === "vocabulary" && !card.reading) {
       const result = convertToHiragana(card.word || "");
       setConvertedReading(result);
@@ -36,10 +46,38 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
 
   const handleTap = () => setShowDetail(!showDetail);
 
+  const correctAnswer = card.word?.toLowerCase().trim();
+
+  const checkAnswer = () => {
+    if (!inputValue.trim()) return;
+
+    if (inputValue.toLowerCase().trim() === correctAnswer) {
+      // Đáp án đúng
+      setShowDetail(true);
+      setWrongCount(0);
+      setShowHint(false);
+      setInputValue("");
+      onNext();
+    } else {
+      // Sai
+      const newWrongCount = wrongCount + 1;
+      setWrongCount(newWrongCount);
+      setShowHint(newWrongCount >= 2);
+    }
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      checkAnswer();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setShowHint(true);
+    }
+  };
+
   return (
     <div
       {...handlers}
-      onClick={handleTap}
       style={{
         touchAction: "pan-y",
         display: "flex",
@@ -48,21 +86,25 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
       }}
     >
       <Card
-        title={{ vocabulary: "Vocabulary", kanji: "Kanji", sentence: "Sentence" }[card.type]}
+        title={
+          { vocabulary: "Vocabulary", kanji: "Kanji", sentence: "Sentence" }[
+            card.type
+          ]
+        }
         style={{
           margin: 0,
           fontSize: "14px",
           lineHeight: 1.6,
-          width: 300, // Fixed width
+          width: 300,
           maxWidth: 480,
-          height: 400, // Fixed height
+          height: 450, // tăng height để đủ chỗ input
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
         }}
         bodyStyle={{
           flex: 1,
-          overflowY: "auto", // Allow scroll if content is long
+          overflowY: "auto",
           paddingBottom: 16,
         }}
       >
@@ -74,9 +116,38 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
         {/* Card Front */}
         {!showDetail && (
           <>
-            {card.type === "vocabulary" && <Title level={4}>{card.word}</Title>}
-            {card.type === "kanji" && <Title level={4}>{card.kanji}</Title>}
-            {card.type === "sentence" && <Paragraph>{card.sentence?.ja}</Paragraph>}
+            {/* Input for user answer (only vocabulary type) */}
+            {card.type === "vocabulary" && (
+              <Space
+                direction="vertical"
+                style={{ marginTop: 16, width: "100%" }}
+              >
+                <Input
+                  ref={inputRef}
+                  placeholder="Nhập từ đây"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  autoFocus
+                  allowClear
+                />
+                <Button type="primary" onClick={checkAnswer}>
+                  OK
+                </Button>
+              </Space>
+            )}
+
+            {/* Hint (reading and meaning) hiện khi sai >= 2 lần hoặc nhấn mũi tên lên */}
+            {showHint && card.type === "vocabulary" && (
+              <div style={{ marginTop: 12, fontSize: 14, color: "#999" }}>
+                <div>
+                  <b>Reading:</b> {card.reading || convertedReading}
+                </div>
+                <div>
+                  <b>Meaning:</b> {card.meaning}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -104,21 +175,6 @@ const FlashCardApp: React.FC<FlashcardProps> = ({ card, onNext, onBack }) => {
                     {card.exampleSentence.vi && <>{card.exampleSentence.vi}</>}
                   </Paragraph>
                 )}
-              </>
-            )}
-
-            {card.type === "kanji" && (
-              <>
-                <Title level={4}>{card.kanji}</Title>
-                <Text>{card.meaning}</Text>
-              </>
-            )}
-
-            {card.type === "sentence" && (
-              <>
-                <Paragraph>{card.sentence?.ja}</Paragraph>
-                {card.sentence?.en && <Paragraph>{card.sentence.en}</Paragraph>}
-                {card.sentence?.vi && <Paragraph>{card.sentence.vi}</Paragraph>}
               </>
             )}
           </div>
